@@ -141,7 +141,26 @@ update msg model =
                     ( model, Browser.Navigation.load url )
 
         UrlChanged url ->
-            ( { model | message = Url.toString url }, Cmd.none )
+            case Url.Parser.parse routeParser url of
+                Nothing ->
+                    -- This is not one of the routes we understand.
+                    ( { model | message = Url.toString url }, Cmd.none )
+
+                Just (Topic topic) ->
+                    ( { model | message = Url.toString url }, Cmd.none )
+
+                Just (Blog id) ->
+                    ( { model | message = Url.toString url }, Cmd.none )
+
+                Just (UserRoute name) ->
+                    ( { model
+                        | message = "view user: " ++ name
+                      }
+                    , Cmd.none
+                    )
+
+                Just (Comment user comment) ->
+                    ( { model | message = Url.toString url }, Cmd.none )
 
 
 viewLink : String -> Html Msg
@@ -172,14 +191,22 @@ viewRoute route =
                     div [] [ text ("comment: " ++ user ++ String.fromInt comment) ]
 
 
+viewAnchor : String -> List String -> Html Msg
+viewAnchor label path =
+    a
+        [ href
+            (Url.Builder.absolute
+                path
+                []
+            )
+        ]
+        [ text label ]
+
+
 viewUserLink : User -> Html Msg
 viewUserLink user =
     li []
-        [ a
-            [ href
-                (Url.Builder.relative [ user.name ] [])
-            ]
-            [ text user.name ]
+        [ viewAnchor user.name [ "user", user.name ]
         ]
 
 
@@ -194,6 +221,8 @@ view model =
     , body =
         [ div [] [ text model.message ]
         , viewRoute model.route
+        , viewAnchor "HOME" []
+        , viewLink "/"
         , viewLink "#home"
         , viewLink "#home/gingo"
         , viewLink "https://google.com"
