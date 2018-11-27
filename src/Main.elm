@@ -12,6 +12,7 @@ import Url.Parser exposing ((</>), Parser, int, map, oneOf, s, string)
 type Route
     = Topic String
     | Blog Int
+    | Users
     | UserRoute String
     | Comment String Int
 
@@ -38,6 +39,7 @@ routeParser =
     oneOf
         [ map Topic (s "topic" </> string)
         , map Blog (s "blog" </> int)
+        , map Users (s "user")
         , map UserRoute (s "user" </> string)
         , map Comment (s "user" </> string </> s "comment" </> int)
         ]
@@ -152,6 +154,9 @@ update msg model =
                 Just (Blog id) ->
                     ( { model | message = Url.toString url }, Cmd.none )
 
+                Just Users ->
+                    ( { model | message = "view all the users" }, Cmd.none )
+
                 Just (UserRoute name) ->
                     ( { model
                         | message = "view user: " ++ name
@@ -187,6 +192,9 @@ viewRoute route =
                 UserRoute val ->
                     div [] [ text ("user: " ++ val) ]
 
+                Users ->
+                    div [] [ text "all users..." ]
+
                 Comment user comment ->
                     div [] [ text ("comment: " ++ user ++ String.fromInt comment) ]
 
@@ -212,7 +220,10 @@ viewUserLink user =
 
 viewNav : List User -> Html Msg
 viewNav users =
-    ul [] (List.map viewUserLink users)
+    ul []
+        (List.map viewUserLink users
+            ++ [ viewAnchor "all users" [ "user" ] ]
+        )
 
 
 view : Model -> Browser.Document Msg
