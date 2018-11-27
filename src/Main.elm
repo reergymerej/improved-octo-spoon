@@ -8,7 +8,7 @@ import Url
 
 
 type alias Model =
-    { num : Int
+    { key : Browser.Navigation.Key
     , message : String
     }
 
@@ -19,8 +19,8 @@ type Msg
 
 
 init : () -> Url.Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
-init flags key url =
-    ( { num = 99
+init flags url key =
+    ( { key = key
       , message = ""
       }
     , Cmd.none
@@ -59,15 +59,11 @@ update msg model =
                     ( { model
                         | message = "internal"
                       }
-                    , Cmd.none
+                    , Browser.Navigation.pushUrl model.key (Url.toString url)
                     )
 
                 Browser.External url ->
-                    ( { model
-                        | message = url
-                      }
-                    , Cmd.none
-                    )
+                    ( model, Browser.Navigation.load url )
 
         UrlChanged url ->
             ( model, Cmd.none )
@@ -85,7 +81,6 @@ view model =
     { title = "Hello!"
     , body =
         [ div [] [ text model.message ]
-        , div [] [ text (String.fromInt model.num) ]
         , viewLink "/home"
         , viewLink "/home/gingo"
         , viewLink "https://google.com"
