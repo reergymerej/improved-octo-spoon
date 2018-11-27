@@ -5,6 +5,56 @@ import Browser.Navigation
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Url
+import Url.Parser exposing ((</>), Parser, int, map, oneOf, s, string)
+
+
+type Route
+    = Topic String
+    | Blog Int
+    | User String
+    | Comment String Int
+
+
+
+-- Parser is a type from Url.Parser.
+-- type Parser a b
+-- It takes a thing and returns a different thing.
+-- string, int, and s are parsers.
+
+
+routeParser : Parser (Route -> a) a
+routeParser =
+    -- Tries a bunch of parsers.
+    -- oneOf : List (Parser a b) -> Parser a b
+    oneOf
+        [ -- map : a -> Parser a b -> Parser (b -> c) c
+          {-
+             map
+                 arg1   a
+                        Topic
+                        Topic : String -> Topic String
+
+                 arg2   Parser a b
+                        (
+                        s
+                        s: String -> Parser a a
+
+                        arg1    "topic"
+
+                        arg2    </>
+                                </> : Parser a b -> Parser b c -> Parser a c
+
+                        string
+                        string : Parser (String -> a) a
+                        )
+
+                 return Parser (b -> c) c
+
+
+
+          -}
+          map Topic (s "topic" </> string)
+        ]
 
 
 type alias Model =
@@ -56,9 +106,7 @@ update msg model =
         LinkClicked req ->
             case req of
                 Browser.Internal url ->
-                    ( { model
-                        | message = "internal"
-                      }
+                    ( model
                     , Browser.Navigation.pushUrl model.key (Url.toString url)
                     )
 
@@ -66,7 +114,7 @@ update msg model =
                     ( model, Browser.Navigation.load url )
 
         UrlChanged url ->
-            ( model, Cmd.none )
+            ( { model | message = Url.toString url }, Cmd.none )
 
 
 viewLink : String -> Html Msg
@@ -78,11 +126,11 @@ viewLink path =
 
 view : Model -> Browser.Document Msg
 view model =
-    { title = "Hello!"
+    { title = model.message
     , body =
         [ div [] [ text model.message ]
-        , viewLink "/home"
-        , viewLink "/home/gingo"
+        , viewLink "#home"
+        , viewLink "#home/gingo"
         , viewLink "https://google.com"
         ]
     }
