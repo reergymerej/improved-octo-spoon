@@ -27,39 +27,17 @@ routeParser =
     -- Tries a bunch of parsers.
     -- oneOf : List (Parser a b) -> Parser a b
     oneOf
-        [ -- map : a -> Parser a b -> Parser (b -> c) c
-          {-
-             map
-                 arg1   a
-                        Topic
-                        Topic : String -> Topic String
-
-                 arg2   Parser a b
-                        (
-                        s
-                        s: String -> Parser a a
-
-                        arg1    "topic"
-
-                        arg2    </>
-                                </> : Parser a b -> Parser b c -> Parser a c
-
-                        string
-                        string : Parser (String -> a) a
-                        )
-
-                 return Parser (b -> c) c
-
-
-
-          -}
-          map Topic (s "topic" </> string)
+        [ map Topic (s "topic" </> string)
+        , map Blog (s "blog" </> int)
+        , map User (s "user" </> string)
+        , map Comment (s "user" </> string </> s "comment" </> int)
         ]
 
 
 type alias Model =
     { key : Browser.Navigation.Key
     , message : String
+    , route : Maybe Route
     }
 
 
@@ -72,6 +50,7 @@ init : () -> Url.Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
 init flags url key =
     ( { key = key
       , message = ""
+      , route = Nothing
       }
     , Cmd.none
     )
@@ -124,11 +103,33 @@ viewLink path =
         ]
 
 
+viewRoute : Maybe Route -> Html Msg
+viewRoute route =
+    case route of
+        Nothing ->
+            div [] [ text "route?" ]
+
+        Just theRoute ->
+            case theRoute of
+                Topic val ->
+                    div [] [ text ("topic: " ++ val) ]
+
+                Blog val ->
+                    div [] [ text ("blog: " ++ String.fromInt val) ]
+
+                User val ->
+                    div [] [ text ("user: " ++ val) ]
+
+                Comment user comment ->
+                    div [] [ text ("comment: " ++ user ++ String.fromInt comment) ]
+
+
 view : Model -> Browser.Document Msg
 view model =
     { title = model.message
     , body =
         [ div [] [ text model.message ]
+        , viewRoute model.route
         , viewLink "#home"
         , viewLink "#home/gingo"
         , viewLink "https://google.com"
