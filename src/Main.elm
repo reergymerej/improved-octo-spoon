@@ -5,14 +5,23 @@ import Browser.Navigation
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Url
+import Url.Builder
 import Url.Parser exposing ((</>), Parser, int, map, oneOf, s, string)
 
 
 type Route
     = Topic String
     | Blog Int
-    | User String
+    | UserRoute String
     | Comment String Int
+
+
+type alias User =
+    { id : Int
+    , name : String
+    , color : String
+    , age : Int
+    }
 
 
 
@@ -29,15 +38,25 @@ routeParser =
     oneOf
         [ map Topic (s "topic" </> string)
         , map Blog (s "blog" </> int)
-        , map User (s "user" </> string)
+        , map UserRoute (s "user" </> string)
         , map Comment (s "user" </> string </> s "comment" </> int)
         ]
+
+
+testUrl =
+    Url.fromString (Url.Builder.crossOrigin "http://foo.com" [ "topic", "foo" ] [])
+
+
+
+-- Url.fromString "http://foo.com/topic/foo"
 
 
 type alias Model =
     { key : Browser.Navigation.Key
     , message : String
     , route : Maybe Route
+    , testUrl : Maybe Url.Url
+    , users : List User
     }
 
 
@@ -50,7 +69,36 @@ init : () -> Url.Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
 init flags url key =
     ( { key = key
       , message = ""
-      , route = Nothing
+      , route =
+            case testUrl of
+                Nothing ->
+                    Nothing
+
+                Just parsedUrl ->
+                    Url.Parser.parse routeParser parsedUrl
+      , testUrl = testUrl
+      , users =
+            [ { id = 0
+              , name = "Jemma"
+              , color = "pink"
+              , age = 3
+              }
+            , { id = 1
+              , name = "Samuel"
+              , color = "blue"
+              , age = 5
+              }
+            , { id = 2
+              , name = "Amanda"
+              , color = "orange"
+              , age = 36
+              }
+            , { id = 3
+              , name = "Jeremy"
+              , color = "green"
+              , age = 36
+              }
+            ]
       }
     , Cmd.none
     )
@@ -117,11 +165,27 @@ viewRoute route =
                 Blog val ->
                     div [] [ text ("blog: " ++ String.fromInt val) ]
 
-                User val ->
+                UserRoute val ->
                     div [] [ text ("user: " ++ val) ]
 
                 Comment user comment ->
                     div [] [ text ("comment: " ++ user ++ String.fromInt comment) ]
+
+
+viewUserLink : User -> Html Msg
+viewUserLink user =
+    li []
+        [ a
+            [ href
+                (Url.Builder.relative [ user.name ] [])
+            ]
+            [ text user.name ]
+        ]
+
+
+viewNav : List User -> Html Msg
+viewNav users =
+    ul [] (List.map viewUserLink users)
 
 
 view : Model -> Browser.Document Msg
@@ -133,6 +197,7 @@ view model =
         , viewLink "#home"
         , viewLink "#home/gingo"
         , viewLink "https://google.com"
+        , viewNav model.users
         ]
     }
 
