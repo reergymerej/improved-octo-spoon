@@ -10,11 +10,8 @@ import Url.Parser exposing ((</>), Parser, int, map, oneOf, s, string)
 
 
 type Route
-    = Topic String
-    | Blog Int
-    | Users
+    = Users
     | UserRoute String
-    | Comment String Int
 
 
 type alias User =
@@ -37,11 +34,8 @@ routeParser =
     -- Tries a bunch of parsers.
     -- oneOf : List (Parser a b) -> Parser a b
     oneOf
-        [ map Topic (s "topic" </> string)
-        , map Blog (s "blog" </> int)
-        , map Users (s "user")
+        [ map Users (s "user")
         , map UserRoute (s "user" </> string)
-        , map Comment (s "user" </> string </> s "comment" </> int)
         ]
 
 
@@ -148,12 +142,6 @@ update msg model =
                     -- This is not one of the routes we understand.
                     ( { model | message = Url.toString url }, Cmd.none )
 
-                Just (Topic topic) ->
-                    ( { model | message = Url.toString url }, Cmd.none )
-
-                Just (Blog id) ->
-                    ( { model | message = Url.toString url }, Cmd.none )
-
                 Just Users ->
                     ( { model | message = "view all the users" }, Cmd.none )
 
@@ -164,16 +152,6 @@ update msg model =
                     , Cmd.none
                     )
 
-                Just (Comment user comment) ->
-                    ( { model | message = Url.toString url }, Cmd.none )
-
-
-viewLink : String -> Html Msg
-viewLink path =
-    div []
-        [ a [ href path ] [ text path ]
-        ]
-
 
 viewRoute : Maybe Route -> Html Msg
 viewRoute route =
@@ -183,20 +161,11 @@ viewRoute route =
 
         Just theRoute ->
             case theRoute of
-                Topic val ->
-                    div [] [ text ("topic: " ++ val) ]
-
-                Blog val ->
-                    div [] [ text ("blog: " ++ String.fromInt val) ]
-
                 UserRoute val ->
                     div [] [ text ("user: " ++ val) ]
 
                 Users ->
                     div [] [ text "all users..." ]
-
-                Comment user comment ->
-                    div [] [ text ("comment: " ++ user ++ String.fromInt comment) ]
 
 
 viewAnchor : String -> List String -> Html Msg
@@ -221,8 +190,8 @@ viewUserLink user =
 viewNav : List User -> Html Msg
 viewNav users =
     ul []
-        (List.map viewUserLink users
-            ++ [ viewAnchor "all users" [ "user" ] ]
+        ([ viewAnchor "all users" [ "user" ] ]
+            ++ List.map viewUserLink users
         )
 
 
@@ -233,10 +202,6 @@ view model =
         [ div [] [ text model.message ]
         , viewRoute model.route
         , viewAnchor "HOME" []
-        , viewLink "/"
-        , viewLink "#home"
-        , viewLink "#home/gingo"
-        , viewLink "https://google.com"
         , viewNav model.users
         ]
     }
