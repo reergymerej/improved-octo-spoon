@@ -10,7 +10,8 @@ import Url.Parser exposing ((</>), Parser, int, map, oneOf, s, string)
 
 
 type Route
-    = Users
+    = Home
+    | Users
     | UserRoute String
 
 
@@ -22,36 +23,18 @@ type alias User =
     }
 
 
-
--- Parser is a type from Url.Parser.
--- type Parser a b
--- It takes a thing and returns a different thing.
--- string, int, and s are parsers.
-
-
 routeParser : Parser (Route -> a) a
 routeParser =
-    -- Tries a bunch of parsers.
-    -- oneOf : List (Parser a b) -> Parser a b
     oneOf
         [ map Users (s "user")
         , map UserRoute (s "user" </> string)
         ]
 
 
-testUrl =
-    Url.fromString (Url.Builder.crossOrigin "http://foo.com" [ "topic", "foo" ] [])
-
-
-
--- Url.fromString "http://foo.com/topic/foo"
-
-
 type alias Model =
     { key : Browser.Navigation.Key
     , message : String
     , route : Maybe Route
-    , testUrl : Maybe Url.Url
     , users : List User
     }
 
@@ -65,14 +48,7 @@ init : () -> Url.Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
 init flags url key =
     ( { key = key
       , message = ""
-      , route =
-            case testUrl of
-                Nothing ->
-                    Nothing
-
-                Just parsedUrl ->
-                    Url.Parser.parse routeParser parsedUrl
-      , testUrl = testUrl
+      , route = Nothing
       , users =
             [ { id = 0
               , name = "Jemma"
@@ -142,12 +118,26 @@ update msg model =
                     -- This is not one of the routes we understand.
                     ( { model | message = Url.toString url }, Cmd.none )
 
+                Just Home ->
+                    ( { model
+                        | message = ""
+                        , route = Just Home
+                      }
+                    , Cmd.none
+                    )
+
                 Just Users ->
-                    ( { model | message = "view all the users" }, Cmd.none )
+                    ( { model
+                        | message = "view all the users"
+                        , route = Just Users
+                      }
+                    , Cmd.none
+                    )
 
                 Just (UserRoute name) ->
                     ( { model
                         | message = "view user: " ++ name
+                        , route = Just (UserRoute name)
                       }
                     , Cmd.none
                     )
@@ -161,6 +151,9 @@ viewRoute route =
 
         Just theRoute ->
             case theRoute of
+                Home ->
+                    div [] [ text "HOME!" ]
+
                 UserRoute val ->
                     div [] [ text ("user: " ++ val) ]
 
